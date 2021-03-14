@@ -6,9 +6,9 @@ This is a repository presenting the evaluation on the MDN model in "Motion Predi
 - matplotlib 
 
 #### Data
-A training set and two evaluation sets are provided.
-Training: 
-Evaluation: 1. 2.
+Two evaluation sets are provided.__ 
+Eval 1.__ 
+Eval 2.__
 
 #### Model
 
