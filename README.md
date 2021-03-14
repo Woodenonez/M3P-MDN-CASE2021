@@ -6,9 +6,9 @@ This is a repository presenting the evaluation on the MDN model in "Motion Predi
 - matplotlib 
 
 #### Data
-Two evaluation sets are provided.__ 
-Eval 1: Pedestrians and forklifts, T=10,...,20__ 
-Eval 2: Forklifts, T=20__
+Two evaluation sets are provided. <br />
+Eval 1: Pedestrians and forklifts, T=10,...,20. <br />
+Eval 2: Forklifts, T=20.
 
 #### Model
 The model is pre-trained.
