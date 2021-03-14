@@ -1,5 +1,6 @@
 # Multimodal Motion Prediction (Micro-version for Model Evaluation)
-This is a repository presenting the evaluation on the MDN model in "Motion Prediction Based on Multiple Futures for Dynamic Obstacle Avoidance of Mobile Robots".
+This is a repository presenting the evaluation on the MDN model in "Motion Prediction Based on Multiple Futures for Dynamic Obstacle Avoidance of Mobile Robots". <br />
+More code will be avaiable later.
 
 #### Requirements
 - pytorch
