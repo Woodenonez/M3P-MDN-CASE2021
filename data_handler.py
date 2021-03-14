@@ -1,5 +1,3 @@
-import sys # for testing
-
 import numpy as np
 import pandas as pd
 
@@ -7,11 +5,10 @@ import torch
 import torch.tensor as ts
 from torch.utils.data import Dataset
 
-import gen_demo_data
 
 '''
 Data handler - read, generate and manage the dataset.
-    1. Use demo data by defining 'func' (in 'gen_demo_data');
+    1. Use demo data by defining 'func' (not supported here!);
     2. Use imported data by defining 'dir' (the data directory).
 '''
 
@@ -96,25 +93,3 @@ class Data_Handler():
         self.__data   = np.array([i.tolist() for i in x])
         self.__labels = np.array([i.tolist() for i in y])
         print('Shuffled.')
-
-
-if __name__ == "__main__":
-
-    import matplotlib.pyplot as plt
-
-    file = '210210_p3m10_2000s_246_249_1414.csv'
-
-    print("Test data handler.")
-    # maxT = 10
-    # past = 1
-    # func = gen_demo_data.gen_DemoBeta(nsamples=40, maxT=maxT, past=past, vis=0)
-    DH = Data_Handler(file_dir=file)
-    batch,label = DH.return_batch(1)
-    print(batch, label)
-    fig, ax = plt.subplots()
-    gen_demo_data.load_oneMap(ax)
-    plt.plot(label[0,0],label[0,1],'rx')
-    plt.show()
-
-
-    

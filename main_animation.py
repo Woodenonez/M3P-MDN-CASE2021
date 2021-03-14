@@ -10,36 +10,56 @@ import torch
 import torch.tensor as ts
 
 import mdn_base
-import CASE.sim_data3
 from data_handler import Data_Handler as DH
 from misc_mixture_density_network import Mixture_Density_Network as MDN
 
-from filter import KalmanFilter, model_CV, fill_diag
+from myfilter import KalmanFilter, model_CV, fill_diag
 
-def plot_fok(ax, x, y, yaw=0):
-    l_side = .8
-    s_side = .8
-    outline = np.array([[-l_side/2, l_side/2, l_side/2, -l_side/2, -l_side/2],
-                        [s_side/2,  s_side/2, -s_side/2, -s_side/2, s_side/2]])
-    rot = np.array([[ math.cos(yaw), math.sin(yaw)],
-                    [-math.sin(yaw), math.cos(yaw)]])
-    outline = (outline.T.dot(rot)).T
-    outline[0, :] += x
-    outline[1, :] += y
-    ax.plot(np.array(outline[0, :]).flatten(),
-            np.array(outline[1, :]).flatten(), "-r")
+def load_Map(ax):
+    rec1 = patches.Rectangle(( 0, 2.5), 4.0, 2.0)
+    rec2 = patches.Rectangle(( 0, 6.5), 4.0, 3.5)
+    rec3 = patches.Rectangle((6.0, 2.5), 4.0, 2.0)
+    rec4 = patches.Rectangle((6.0, 6.5), 4.0, 3.5)
+    rec5 = patches.Rectangle((0, 0), 10.0, .5)
+    Rec1 = [rec1, rec2, rec3, rec4, rec5] # map - static obstacles 1 （grey）
+
+    rec1 = patches.Rectangle(( 0, 3.0), 3.5, 1.5)
+    rec2 = patches.Rectangle(( 0, 6.5), 3.5, 3.5)
+    rec3 = patches.Rectangle((6.5, 3.0), 3.5, 1.5)
+    rec4 = patches.Rectangle((6.5, 6.5), 3.5, 3.5)
+    Rec2 = [rec1, rec2, rec3, rec4] # map - static obstacles 2
+
+    pc1 = PatchCollection(Rec1, color=[0.5,0.5,0.5])
+    pc2 = PatchCollection(Rec2, color=[0,0,0])
+    
+    ax.add_collection(pc1)
+    ax.add_collection(pc2)
+    ax.axis('equal')
+    ax.set(xlim=(-.5, 10.5), ylim=(-.5, 10.5))
+
+    ax.text( 5.0, 10.0,'N')
+    ax.text( 5.0,  -.4,'S')
+    ax.text( -.5,  5.0,'W')
+    ax.text(10.0,  5.0,'E')
+
+    # plt.plot((0,100),(0,0),'k') # borders
+    ax.plot((0,10.0),(5.5,5.5),'y--') # ref line 1 - AGV
 
 print("Program: load\n")
 
-df = pd.read_csv('./CASE/data_v3/210309_p5m20_2000s_h.2_665_301_249_2.csv')
-data = df.to_numpy()[:,:-2]
-data[:,:-2] = data[:,:-2]
+data_path = './data/eval_data1.csv' # eval_data1 or eval_data1
+model_path = './model/Model_CASE_p5m20_512_256_256_128_64'
+
+df = pd.read_csv(data_path)
+data   = df.to_numpy()[:,:-2]
 labels = df.to_numpy()[:,-2:]
 
-# maxT = 10
-past = 5
-num_gaus = 10
-layer_param = [512, 256, 256, 128, 64]
+# Don't change these parameters
+maxT = 20
+past = 5 # take the past instants
+num_gaus = 10 # the number of Gaussian components
+layer_param = [512, 256, 256, 128, 64] # Body architecture (MLP layers)
+
 
 data_shape = (1, past*2+4)
 label_shape = (1, 2)
@@ -47,51 +67,21 @@ label_shape = (1, 2)
 myMDN = MDN(data_shape, label_shape, num_gaus=num_gaus, layer_param=layer_param, verbose=False)
 myMDN.build_Network()
 model = myMDN.model
-print(myMDN.layer_param)
-
-load_path = './CASE/model_v3/Model_CASE_p5m20_512_256_256_128_64_v3'
-model.load_state_dict(torch.load(load_path))
+model.load_state_dict(torch.load(model_path))
 model.eval()
 
 
 fig, ax = plt.subplots()
 
-# p3m10_2: 1:39615-39660, 2:45084-45179, 3:50748-50919
-# p5m10_2: 1: 3189-3249,  2: 8679-8774,  3:54434-54604
-idc = np.linspace(1062,1068,num=1259-1247).astype('int') # 474
+idc = np.linspace(4932,4971,num=39).astype('int')
 first_loop = 1
 for idx in idc:
     plt.cla()
-    CASE.sim_data3.load_Map(ax)
+    load_Map(ax)
     
     sample = data[idx,:] # x_h, y_h, x_t, y_t, T, type
     label = labels[idx,:]
 
-    # fig,ax = plt.subplots()
-    # X0 = np.array([[sample[0],sample[1],0,0]]).transpose()
-    # kf_model = model_CV(X0, Ts=1)
-    # P0 = fill_diag((1,1,1,1))
-    # Q  = fill_diag((1,1,1,1))
-    # R  = fill_diag((1,1))
-    # KF = KalmanFilter(kf_model,P0,Q,R)
-    # Y = [np.array(sample[2:4]), np.array(sample[4:6]), 
-    #      np.array(sample[6:8]), np.array(sample[8:10]), np.array(sample[10:12])]
-    # U = np.array([[0]])
-    # for i in range(len(Y)+int(sample[-2])):
-    #     ax.cla()
-    #     CASE.sim_data.load_Map(ax)
-    #     print(KF.X)
-    #     if i<len(Y):
-    #         KF.one_step(U, np.array(Y[i]).reshape(2,1))
-    #     else:
-    #         KF.predict(U,evolve_P=False)
-    #         KF.append_state(KF.X)
-    #     mdn_base.draw_GauEllipse(ax, ts([KF.X[:2].reshape(-1)])*100, ts([[KF.P[0,0],KF.P[1,1]]]), fc='g', nsigma=1, extend=False)
-    #     plt.plot(KF.Xs[0,:]*100,  KF.Xs[1,:]*100,  'bo-')
-    #     plt.plot(np.array(Y)[:,0]*100, np.array(Y)[:,1]*100, 'rx')
-    #     plt.pause(1)
-    # plt.show()
-    # sys.exit(0)
 
     traj_input = sample[:-2]
     T = sample[-2]
@@ -114,10 +104,6 @@ for idx in idc:
             KF.append_state(KF.X)
 
     ### MDN
-
-    past_x = traj_input[::2]
-    past_y = traj_input[1::2]
-
     beta_test = ts(np.tile(np.array([sample]), (1,1)).astype(np.float32))
     alp, mu, sigma = model(beta_test)
     alp, mu, sigma = mdn_base.take_mainCompo(alp, mu, sigma, main=5)
@@ -130,6 +116,8 @@ for idx in idc:
     else:
         sigma = sigma+0.6
 
+    past_x = traj_input[::2]
+    past_y = traj_input[1::2]
     plt.plot(past_x[:-1], past_y[:-1], 'k.', label="Past Position")
     plt.plot(traj_input[-2], traj_input[-1], 'ko', label="Current Position")
     plt.plot(label[0], label[1], 'bo', label="Future truth")
@@ -153,23 +141,19 @@ for idx in idc:
     plt.xlabel("x [m]", fontsize=14)
     plt.ylabel("y [m]", fontsize=14)
     plt.legend()
-    # plt.title("Comparison between the KF and MDN predictions")
+    plt.title("Comparison between the KF and MDN predictions")
 
     mdn_base.draw_GauEllipse(ax, mu[0], sigma[0], fc='y', nsigma=2, extend=0, label='MDN 2-sigma')
     mdn_base.draw_GauEllipse(ax, mu[0], sigma[0], fc='r', nsigma=1, extend=0, label='MDN 1-sigma')
     # mdn_base.draw_probDistribution(ax, alp, mu*100, sigma, main=None, nsigma=3, colorbar=first_loop)
-    # print(sigma[0], ts([[KF.P[0,0],KF.P[1,1]]]))
     mdn_base.draw_GauEllipse(ax, ts([KF.X[:2].reshape(-1)]), ts([[KF.P[0,0],KF.P[1,1]]]), fc='m', nsigma=1, extend=0, label='KF 1-sigma')
 
     plt.legend(prop={'size': 14}, loc='upper right')
 
-    # plot_fok(ax, label[0], label[1], 0)
-
-    # if idx == idc[-1]:
-    #     plt.text(5,5,'Done!',fontsize=20)
+    if idx == idc[-1]:
+        plt.text(5,5,'Done!',fontsize=20)
     first_loop = 0
 
-    # plt.savefig('{}'.format(idx))
     plt.pause(1)
 
 plt.show()

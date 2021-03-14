@@ -1,10 +1,7 @@
-import sys, math
 import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib.collections import PatchCollection
 
 import torch
 import torch.tensor as ts
@@ -12,51 +9,37 @@ import torch.tensor as ts
 import mdn_base
 from data_handler import Data_Handler as DH
 from misc_mixture_density_network import Mixture_Density_Network as MDN
-
-from filter import KalmanFilter, model_CV, fill_diag
-
-def plot_fok(ax, x, y, yaw=0):
-    l_side = 10
-    s_side = 6
-    outline = np.array([[-l_side/2, l_side/2, l_side/2, -l_side/2, -l_side/2],
-                        [s_side/2,  s_side/2, -s_side/2, -s_side/2, s_side/2]])
-    rot = np.array([[ math.cos(yaw), math.sin(yaw)],
-                    [-math.sin(yaw), math.cos(yaw)]])
-    outline = (outline.T.dot(rot)).T
-    outline[0, :] += x
-    outline[1, :] += y
-    ax.plot(np.array(outline[0, :]).flatten(),
-            np.array(outline[1, :]).flatten(), "-r")
+from myfilter import KalmanFilter, model_CV, fill_diag
 
 print("Program: evaluation\n")
 
-# data_path = './CASE/data_v3/210309_p5m20_2000s_h.2_665_301_249_2.csv'
-data_path = 'eval_data.csv'
-model_path = './CASE/model_v3/Model_CASE_p5m20_512_256_256_128_64_v3'
+data_path = './data/eval_data1.csv' # eval_data1 or eval_data1
+model_path = './model/Model_CASE_p5m20_512_256_256_128_64'
 
 df = pd.read_csv(data_path) # for test
-data = df.to_numpy()[:,:-2]
-data[:,:-2] = data[:,:-2]
+data   = df.to_numpy()[:,:-2]
 labels = df.to_numpy()[:,-2:]
 N = data.shape[0]
 print('There are {} samples.'.format(N))
 
-# maxT = 20
-past = 5
-num_gaus = 10
-layer_param = [512, 256, 256, 128, 64]
+# Don't change these parameters
+maxT = 20
+past = 5 # take the past instants
+num_gaus = 10 # the number of Gaussian components
+layer_param = [512, 256, 256, 128, 64] # Body architecture (MLP layers)
+
 
 data_shape = (1, past*2+4)
 label_shape = (1, 2)
 
+# Load the MDN model
 myMDN = MDN(data_shape, label_shape, num_gaus=num_gaus, layer_param=layer_param, verbose=False)
 myMDN.build_Network()
 model = myMDN.model
 model.load_state_dict(torch.load(model_path))
 model.eval()
-print(myMDN.layer_param)
 
-first_loop = 1
+
 Loss_MDN = []
 Loss1_MDN = []
 Loss_KF = []
@@ -104,7 +87,6 @@ for idx in range(N):
     Loss1_MDN.append(loss1_MDN.detach().float().item())
 
     if idx==5000:
-        print([KF.X[:2].reshape(-1)], mu1[0])
         fig, ax1 = plt.subplots()   
         h1 = ax1.hist(np.array(Loss_KF)[np.array(Loss_KF)<10], bins=20, alpha=0.5, label='KF')
         h2 = ax1.hist(np.array(Loss_MDN)[np.array(Loss_MDN)<10], bins=20, alpha=0.5, label='MDN')
@@ -118,9 +100,7 @@ for idx in range(N):
         # ax1.set_ylim((0,200))
         plt.legend(prop={'size': 20})
         plt.show()
-        print('\n', sum(Loss_KF)/len(Loss_KF), sum(Loss1_MDN)/len(Loss1_MDN), sum(Loss_MDN)/len(Loss_MDN))
-        print(max(Loss_KF), max(Loss1_MDN), max(Loss_MDN))
-        print(sum(np.array(Loss_KF)>5),sum(np.array(Loss1_MDN)>5),sum(np.array(Loss_MDN)>5))
-        sys.exit(0)
-
-
+        print('\nAverage (KF, MDN-1, MDN): ',   sum(Loss_KF)/len(Loss_KF), 
+                                                sum(Loss1_MDN)/len(Loss1_MDN), 
+                                                sum(Loss_MDN)/len(Loss_MDN))
+        break
