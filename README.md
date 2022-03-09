@@ -1,6 +1,5 @@
 # Multimodal Motion Prediction (Micro-version for Model Evaluation)
-This is a repository presenting the evaluation on the MDN model in "Motion Prediction Based on Multiple Futures for Dynamic Obstacle Avoidance of Mobile Robots", which is published on IEEE CASE2021. <br />
-More code will be available later in "Related Code".
+This is a repository presenting the evaluation on the MDN model in "[Motion Prediction Based on Multiple Futures for Dynamic Obstacle Avoidance of Mobile Robots](https://ieeexplore.ieee.org/document/9551463)", which is published on IEEE CASE2021. <br />
 
 ## Related Code
 1. [Trajectory Generator](https://github.com/Woodenonez/TrajGenAvo_NMPC_OpEn)
