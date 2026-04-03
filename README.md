@@ -3,7 +3,7 @@ This is a repository presenting the evaluation on the MDN model in "[Motion Pred
 
 ## Related Code
 1. [Trajectory Generator](https://github.com/Woodenonez/TrajGenAvo_NMPC_OpEn)
-2. [Motion prediction](https://github.com/Woodenonez/SimMotionPred_MDN_Pytorch)
+2. [Motion prediction](motion_prediction)
 
 #### Requirements
 - pytorch
